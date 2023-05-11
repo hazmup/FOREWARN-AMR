@@ -1,0 +1,121 @@
+# config.yaml
+
+
+# Input directory on local PC
+# input_dir: "/mnt/d/raw/230317_VH00702_3_AAATY52HV/Analysis/1/Data/fastq"
+# input_dir: "/230331"
+# input_list: "/mnt/d/samples.txt"
+
+
+# Input directory on ARIS
+base_dir: "/work2/pa22/sgkionis"
+input_dir: "/230331"
+input_list: "/users/pa22/sgkionis/samples.txt"
+
+
+# Parent output directories
+# output_dir: "/mnt/d/pipeline_out/230317"
+output_dir: "/pipeline_out/230331"
+
+
+# path to reference databases
+kraken_db: "/path/to/kraken2_db"
+humann2_db: "/path/to/humann2_db"
+
+
+# FastQC parameters
+fastqc_params: "--threads 80"
+
+
+# # MultiQC parameters
+# multiqc_params:
+
+
+# BBDuk parameters
+bbduk:
+  ref:
+    remove_adapters: "/users/pa22/sgkionis/resources/adapters.fa"
+    remove_artifacts: "/users/pa22/sgkionis/resources/artifacts.fa.gz"
+  ktrim: "r"
+  k:
+    remove_adapters: 23
+    remove_artifacts: 31
+  mink: 11
+  hdist: 1
+  ftr: 149
+  trimpolygright: 10
+  qtrim: "r"
+  trimq: 10
+  maq: 10
+  memory: 50000
+  threads: 80
+
+
+# Bowtie2 parameters
+bowtie2:
+  database_dir: "/users/pa22/sgkionis/databases"
+  database: "/GRCh38_noalt_as"
+  threads: 40
+
+
+# bwa_mem2 parameters
+bwa_mem2:
+  database_dir: "/users/pa22/sgkionis/databases"
+  database: "/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+  threads: 40
+
+
+# rgi parameters
+rgi:
+  cardDB: "/users/pa22/sgkionis/databases/card"
+  aligner: "bwa"
+  threads: 40
+
+
+# bbmap parameters
+bbmap:
+  database: "/users/pa22/sgkionis/databases/hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz"
+  threads: 40
+
+
+# krakenuniq parameters
+kraken_uniq:
+  database: "/users/pa22/sgkionis/databases/krakenuniq"
+  threads: 40
+  preload_size: "100G"
+
+
+# kraken2 parameters
+kraken2:
+  database: "/users/pa22/sgkionis/databases/k2_standard_20230314"
+  threads: 40
+
+
+# bracken parameters
+bracken:
+  database: "/users/pa22/sgkionis/databases/k2_standard_20230314"
+  level: "S"
+  read_length: 250
+  threshold: 10
+
+
+# MetaSPADES parameters
+metaspades:
+  threads: 80
+  memory: 490000
+  time: 60 * 24
+
+
+# ResFinder parameters:
+resfinder:
+  db_res: "/users/pa22/sgkionis/databases/resfinder/resfinder_db"
+ 
+
+# Sample and read direction patterns
+#sample_pattern: "(.*)_L00[12]_R[12]_001.fastq.gz"
+# sample_pattern: "(.*)_R[12]_001.fastq.gz"
+# read_pattern: "R([12])"
+
+
+# whether to run the genome index building step
+build_index: true
