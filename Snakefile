@@ -14,35 +14,23 @@ with open(samples_file) as f:
 READS = ["1", "2"]
 
 
-# Rules------------------------------------------------------------------------
+# All rule - Modify accordigly-------------------------------------------------
 rule all:
     input:
-        # expand(output_dir + "/fastqc/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
-        # expand(output_dir + "/trimmed/{sample}_R{read}_clean.fastq.gz", sample=SAMPLES, read=READS),
-        # expand(output_dir + "/kraken2/{sample}_classification.tsv", sample=SAMPLES),
-        # expand(output_dir + "/bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv", sample=SAMPLES),
-        # expand(output_dir + "/rgi/{sample}.txt", sample=SAMPLES),
+        expand(output_dir + "/fastqc/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
+        expand(output_dir + "/bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv", sample=SAMPLES),
+        expand(output_dir + "/rgi/{sample}.txt", sample=SAMPLES),
         expand(output_dir + "/resfinder/{sample}/resfinder_kma/all.res", sample=SAMPLES),
 
 
-rule test:
-    input:
-        "/users/pa22/sgkionis/test.txt"
-    output:
-        "/users/pa22/sgkionis/test2.txt"
-    shell:
-        """
-        cat {input} > {output}
-        """
-
-
+# Rule definitions-------------------------------------------------------------
 # Run FastQC on the fastq.gz files
 rule fastqc_fastq_gz:
     input:
-        input_dir + "/{sample}_{read}_001.fastq.gz",
+        input_dir + "{sample}_{read}_001.fastq.gz",
     output:
-        html = output_dir + "/fastqc/{sample}_{read}_fastqc.html",
-        zip = output_dir + "/fastqc/{sample}_{read}_fastqc.zip",
+        html = output_dir + "fastqc/{sample}_{read}_fastqc.html",
+        zip = output_dir + "fastqc/{sample}_{read}_fastqc.zip",
     params: 
         "--quiet",
     log:
@@ -56,10 +44,10 @@ rule fastqc_fastq_gz:
 # Run FastQC on the fastq files
 rule fastqc_fastq:
     input:
-        input_dir + "/{sample}_{read}_001.fastq",
+        input_dir + "{sample}_{read}_001.fastq",
     output:
-        html = output_dir + "/fastqc/{sample}_{read}_fastqc.html",
-        zip = output_dir + "/fastqc/{sample}_{read}_fastqc.zip",
+        html = output_dir + "fastqc/{sample}_{read}_fastqc.html",
+        zip = output_dir + "fastqc/{sample}_{read}_fastqc.zip",
     params: 
         "--quiet",
     log:
@@ -73,14 +61,14 @@ rule fastqc_fastq:
 # Run MultiQC on the FastQC reports
 rule multiqc:
     input:
-        expand(output_dir + "/fastqc/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
+        expand(output_dir + "fastqc/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
     output:
-        output_dir + "/multiqc/multiqc_report.html",
+        output_dir + "multiqc/multiqc_report.html",
     params:
         extra = "",
         use_input_files_only = True, # Optional, use only a.txt and don't search folder samtools_stats for files
     log:
-        output_dir + "/logs/multiqc.log",
+        output_dir + "logs/multiqc.log",
     wrapper:
         "v1.25.0/bio/multiqc"
 
@@ -88,12 +76,12 @@ rule multiqc:
 # Run bbduk to remove adapters
 rule remove_adapters:
     input:
-        sample = [input_dir + "/{sample}_R1_001.fastq.gz", input_dir + "/{sample}_R2_001.fastq.gz"],
+        sample = [input_dir + "{sample}_R1_001.fastq.gz", input_dir + "{sample}_R2_001.fastq.gz"],
         adapters = config["bbduk"]["ref"]["remove_adapters"],
     output:
-        trimmed = temp([output_dir+"/trimmed/{sample}_R1_adaptered.fastq.gz", output_dir + "/trimmed/{sample}_R2_adaptered.fastq.gz"])
+        trimmed = temp([output_dir+"/trimmed/{sample}_R1_adaptered.fastq.gz", output_dir + "trimmed/{sample}_R2_adaptered.fastq.gz"])
     log:
-        output_dir + "/logs/bbduk/pe/{sample}_remove_adapters.log",
+        output_dir + "logs/bbduk/pe/{sample}_remove_adapters.log",
     params:
         extra = lambda w, input: "ref={adapters} ktrim={ktrim} k={k} mink={mink} hdist={hdist} tpe tbo trimpolygright={trimpolygright} ftr={ftr}".format(
             adapters = input.adapters,
@@ -116,13 +104,13 @@ rule remove_adapters:
 # Run bbduk to remove sequencing artifacts
 rule remove_artifacts:
     input:
-        sample = [output_dir + "/trimmed/{sample}_R1_adaptered.fastq.gz", output_dir + "/trimmed/{sample}_R2_adaptered.fastq.gz"],
+        sample = [output_dir + "trimmed/{sample}_R1_adaptered.fastq.gz", output_dir + "trimmed/{sample}_R2_adaptered.fastq.gz"],
         adapters = config["bbduk"]["ref"]["remove_artifacts"],
     output:
-        trimmed = [output_dir + "/trimmed/{sample}_R1_clean.fastq.gz", output_dir + "/trimmed/{sample}_R2_clean.fastq.gz"],
-        stats = output_dir + "/trimmed/{sample}.stats.txt",
+        trimmed = [output_dir + "trimmed/{sample}_R1_clean.fastq.gz", output_dir + "trimmed/{sample}_R2_clean.fastq.gz"],
+        stats = output_dir + "trimmed/{sample}.stats.txt",
     log:
-        output_dir + "/logs/bbduk/pe/{sample}_remove_artifacts.log",
+        output_dir + "logs/bbduk/pe/{sample}_remove_artifacts.log",
     params:
         extra = lambda w, input: "ref={ref} k={k} hdist={hdist} ".format(
             ref = input.adapters,
@@ -142,14 +130,14 @@ rule remove_artifacts:
 # Run kraken2 to classify reads
 rule kraken2:
     input:
-        readF = output_dir + "/trimmed/{sample}_R1_clean.fastq.gz",
-        readR = output_dir + "/trimmed/{sample}_R2_clean.fastq.gz",
+        readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
+        readR = output_dir + "trimmed/{sample}_R2_clean.fastq.gz",
         db = config["kraken2"]["database"]
     output:
-        rep = output_dir + "/kraken2/{sample}_kraken.tsv",
-        classif = output_dir + "/kraken2/{sample}_classification.tsv",
+        rep = output_dir + "kraken2/{sample}_kraken.tsv",
+        classif = output_dir + "kraken2/{sample}_classification.tsv",
     log:
-        output_dir + "/logs/kraken2/{sample}.log",
+        output_dir + "logs/kraken2/{sample}.log",
     params:
         threads = config["kraken2"]["threads"],
     conda:
@@ -164,12 +152,12 @@ rule kraken2:
 # Run bracken on kraken2 reports to get clasification to specific taxonomic level
 rule bracken:
     input:
-        rep = output_dir + "/kraken2/{sample}_kraken.tsv",
+        rep = output_dir + "kraken2/{sample}_kraken.tsv",
         db = config["bracken"]["database"],
     output:
-        brack_rep = output_dir + "/bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv",
+        brack_rep = output_dir + "bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv",
     log:
-        output_dir + "/logs/bracken/{sample}.log",
+        output_dir + "logs/bracken/{sample}.log",
     params:
         read_len = config["bracken"]["read_length"],
         threshold = config["bracken"]["threshold"],
@@ -186,18 +174,18 @@ rule bracken:
 # Run rgi with CARD database to get resistome
 rule rgi:
     input:
-        readF = output_dir + "/trimmed/{sample}_R1_clean.fastq.gz",
-        readR = output_dir + "/trimmed/{sample}_R2_clean.fastq.gz",
+        readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
+        readR = output_dir + "trimmed/{sample}_R2_clean.fastq.gz",
         cardDb = config["rgi"]["cardDB"],
     output:
-        cardTxt = output_dir + "/rgi/{sample}.txt",
+        cardTxt = output_dir + "rgi/{sample}.txt",
     log:
-        output_dir + "/logs/rgi/{sample}.log",
+        output_dir + "logs/rgi/{sample}.log",
     params:
         aligner = config["rgi"]["aligner"],
         threads = config["rgi"]["threads"],
     conda:
-        "envs/rgi.yaml"
+        "envs/rgi.yaml",
     shell:
         """
         rgi load --card_json {input.cardDb}/card.json --local --card_annotation {input.cardDb}/card_database_v3.2.6.fasta \
@@ -213,25 +201,29 @@ rule rgi:
 # Run resfinder to get resistome
 rule resfinder:
     input:
-        readF = output_dir + "/trimmed/{sample}_R1_clean.fastq.gz",
-        readR = output_dir + "/trimmed/{sample}_R2_clean.fastq.gz",
+        readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
+        readR = output_dir + "trimmed/{sample}_R2_clean.fastq.gz",
     output:
-        output_dir + "/resfinder/{sample}/{sample}.json",
+        res = output_dir + "resfinder/{sample}/resfinder_kma/all.res",
     log:
-        output_dir + "/logs/rgi/{sample}.log",
+        output_dir + "logs/rgi/{sample}.log",
     params:
-        out_dir = output_dir + "/{sample}/",
+        out_dir = output_dir + "resfinder/{sample}/",
         db_res = config["resfinder"]["db_res"],
     conda:
         "envs/resfinder.yaml",
     shell:
         """
-        run_resfinder.py -ifq {input.readF} {input.readR} -o {params.out_dir} --acquired \
--db_res {params.db_res}
+        # Checks if databases have been built and builds them otherwise
+        if [ ! -e {params.db_res}/all.comp.b ]
+        then
+            {params.db_res}/INSTALL.py
+        fi
+
+        # Runs resfinder
+        run_resfinder.py -ifq {input.readF} {input.readR} -o {params.out_dir} --acquired -db_res {params.db_res}
+
+        # Create a summary results file
+        array=( {params.out_dir}/resfinder_kma/*.res )
+        {{ cat ${{array[@]:0:1}}; grep -vh "^#" ${{array[@]:1}}; }} > {output.res}
         """
-
-
-# # Run resfinderfg to get resistome
-# rule resfinderfg:
-#     input:
-#     output:
