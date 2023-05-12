@@ -22,7 +22,7 @@ rule all:
         # expand(output_dir + "/kraken2/{sample}_classification.tsv", sample=SAMPLES),
         # expand(output_dir + "/bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv", sample=SAMPLES),
         # expand(output_dir + "/rgi/{sample}.txt", sample=SAMPLES),
-        expand(output_dir + "/resfinder/{sample}/{sample}.json", sample=SAMPLES),
+        expand(output_dir + "/resfinder/{sample}/resfinder_kma/all.res", sample=SAMPLES),
 
 
 rule test:
