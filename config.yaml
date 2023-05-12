@@ -1,30 +1,26 @@
 # config.yaml
 
 
-# Input directory on local PC
-# input_dir: "/mnt/d/raw/230317_VH00702_3_AAATY52HV/Analysis/1/Data/fastq"
-# input_dir: "/230331"
-# input_list: "/mnt/d/samples.txt"
+# Samplelist file
+input_list: "/path/to/file/samples.txt"
 
 
-# Input directory on ARIS
-base_dir: "/work2/pa22/sgkionis"
-input_dir: "/230331"
-input_list: "/users/pa22/sgkionis/samples.txt"
-
+# Input directory
+base_dir: "/path/to/project/dir/"
+input_dir: "subdirectory/to/raw/input/"
+databses_dir: "/path/to/databases/"
 
 # Parent output directories
-# output_dir: "/mnt/d/pipeline_out/230317"
-output_dir: "/pipeline_out/230331"
+output_dir: "subdir/to/pipeline_out/for/project/"
 
 
-# path to reference databases
+# Path to reference databases
 kraken_db: "/path/to/kraken2_db"
 humann2_db: "/path/to/humann2_db"
 
 
 # FastQC parameters
-fastqc_params: "--threads 80"
+fastqc_params: "--threads 40"
 
 
 # # MultiQC parameters
@@ -34,8 +30,8 @@ fastqc_params: "--threads 80"
 # BBDuk parameters
 bbduk:
   ref:
-    remove_adapters: "/users/pa22/sgkionis/resources/adapters.fa"
-    remove_artifacts: "/users/pa22/sgkionis/resources/artifacts.fa.gz"
+    remove_adapters: "/path/to/adapters.fa"
+    remove_artifacts: "/path/to/artifacts.fa.gz"
   ktrim: "r"
   k:
     remove_adapters: 23
@@ -53,69 +49,63 @@ bbduk:
 
 # Bowtie2 parameters
 bowtie2:
-  database_dir: "/users/pa22/sgkionis/databases"
-  database: "/GRCh38_noalt_as"
+  database_dir: "/path/to/databases/"
+  database: "subdir/to/database"
   threads: 40
 
 
 # bwa_mem2 parameters
 bwa_mem2:
-  database_dir: "/users/pa22/sgkionis/databases"
-  database: "/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz"
+  database_dir: "/path/to/databases/"
+  database: "subdir/to/reference/database"
   threads: 40
 
 
 # rgi parameters
 rgi:
-  cardDB: "/users/pa22/sgkionis/databases/card"
-  aligner: "bwa"
+  cardDB: "/path/to/card/database"
+  aligner: "kma"
   threads: 40
 
 
 # bbmap parameters
 bbmap:
-  database: "/users/pa22/sgkionis/databases/hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz"
+  database: "/path/to/reference/database"
   threads: 40
 
 
 # krakenuniq parameters
 kraken_uniq:
-  database: "/users/pa22/sgkionis/databases/krakenuniq"
+  database: "/path/to/krakenuniq/database"
   threads: 40
   preload_size: "100G"
 
 
 # kraken2 parameters
 kraken2:
-  database: "/users/pa22/sgkionis/databases/k2_standard_20230314"
+  database: "/path/to/kraken2/database"
   threads: 40
 
 
 # bracken parameters
 bracken:
-  database: "/users/pa22/sgkionis/databases/k2_standard_20230314"
-  level: "S"
-  read_length: 250
+  database: "/path/to/bracken/database"
+  level: "S" # Taxonomic level of interest
+  read_length: 150
   threshold: 10
 
 
 # MetaSPADES parameters
 metaspades:
   threads: 80
-  memory: 490000
+  memory: 490000 # In MB
   time: 60 * 24
 
 
 # ResFinder parameters:
 resfinder:
-  db_res: "/users/pa22/sgkionis/databases/resfinder/resfinder_db"
- 
-
-# Sample and read direction patterns
-#sample_pattern: "(.*)_L00[12]_R[12]_001.fastq.gz"
-# sample_pattern: "(.*)_R[12]_001.fastq.gz"
-# read_pattern: "R([12])"
+  db_res: "/path/to/databases/resfinder/resfinder_db"
 
 
-# whether to run the genome index building step
+# Flag for whether to run the genome index building step
 build_index: true
