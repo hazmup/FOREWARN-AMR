@@ -5,94 +5,50 @@
 input_list: "/path/to/file/samples.txt"
 
 
-# Input directory
+# Directories
 base_dir: "/path/to/project/dir/"
 input_dir: "subdirectory/to/raw/input/"
-databses_dir: "/path/to/databases/"
-
-# Parent output directories
 output_dir: "subdir/to/pipeline_out/for/project/"
+databases_dir: "/path/to/databases/"
 
 
-# Path to reference databases
-kraken_db: "/path/to/kraken2_db"
-humann2_db: "/path/to/humann2_db"
+# RQCFilter2 parameters:
+rqcfilter2:
+  database: "RQCFilterData/"
+  memory: 40
+  threads: 4
 
 
-# FastQC parameters
-fastqc_params: "--threads 40"
-
-
-# # MultiQC parameters
-# multiqc_params:
-
-
-# BBDuk parameters
-bbduk:
-  ref:
-    remove_adapters: "/path/to/adapters.fa"
-    remove_artifacts: "/path/to/artifacts.fa.gz"
-  ktrim: "r"
-  k:
-    remove_adapters: 23
-    remove_artifacts: 31
-  mink: 11
-  hdist: 1
-  ftr: 149
-  trimpolygright: 10
-  qtrim: "r"
-  trimq: 10
-  maq: 10
-  memory: 50000
-  threads: 80
-
-
-# Bowtie2 parameters
-bowtie2:
-  database_dir: "/path/to/databases/"
-  database: "subdir/to/database"
+# Kraken2 parameters
+kraken2:
+  database: "path/to/kraken2/database"
   threads: 40
 
 
-# bwa_mem2 parameters
-bwa_mem2:
-  database_dir: "/path/to/databases/"
-  database: "subdir/to/reference/database"
-  threads: 40
+# Bracken parameters
+bracken:
+  database: "path/to/bracken/database"
+  level: "S" # Taxonomic level of interest
+  read_length: 150
+  threshold: 10
 
 
-# rgi parameters
+# RGI parameters
 rgi:
-  cardDB: "/path/to/card/database"
+  cardDB: "path/to/card/database"
   aligner: "kma"
   threads: 40
 
 
-# bbmap parameters
-bbmap:
-  database: "/path/to/reference/database"
-  threads: 40
+# ResFinder parameters:
+resfinder:
+  db_res: "path/to/databases/resfinder/resfinder_db"
 
 
-# krakenuniq parameters
-kraken_uniq:
-  database: "/path/to/krakenuniq/database"
-  threads: 40
-  preload_size: "100G"
-
-
-# kraken2 parameters
-kraken2:
-  database: "/path/to/kraken2/database"
-  threads: 40
-
-
-# bracken parameters
-bracken:
-  database: "/path/to/bracken/database"
-  level: "S" # Taxonomic level of interest
-  read_length: 150
-  threshold: 10
+# ResFinderFG parameters:
+resfinderfg:
+  db_res: "path/to/databases/resfinder/resfinderfg_db"
+  threads: 8
 
 
 # MetaSPADES parameters
@@ -100,12 +56,3 @@ metaspades:
   threads: 80
   memory: 490000 # In MB
   time: 60 * 24
-
-
-# ResFinder parameters:
-resfinder:
-  db_res: "/path/to/databases/resfinder/resfinder_db"
-
-
-# Flag for whether to run the genome index building step
-build_index: true
