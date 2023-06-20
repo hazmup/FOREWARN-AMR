@@ -14,7 +14,7 @@ databases_dir: "/path/to/databases/"
 
 # RQCFilter2 parameters:
 rqcfilter2:
-  database: "RQCFilterData/"
+  database: "path/to/rqcfilter2/database/"
   memory: 40
   threads: 4
 
