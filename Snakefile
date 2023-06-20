@@ -180,7 +180,7 @@ rule bracken:
         """
 
 
-# Run rgi with CARD database to get resistome
+# Run RGI with CARD database to get resistome
 rule rgi:
     input:
         readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
@@ -206,7 +206,7 @@ rule rgi:
         """
 
 
-# Run resfinder to get resistome
+# Run Resfinder to get resistome
 rule resfinder:
     input:
         readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
@@ -239,7 +239,7 @@ rule resfinder:
         """
 
 
-# Run resfinderfg to get resistome
+# Run ResfinderFG to get resistome
 rule resfinderfg:
     input:
         readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
