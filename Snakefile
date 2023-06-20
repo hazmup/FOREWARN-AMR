@@ -96,6 +96,7 @@ rule multiqc_clean:
         "v1.31.0/bio/multiqc"
 
 
+# Performs standard QC per JGI metagenomics pipeline; does not remove bacterial contaminants, simply reports on them
 rule rqcfilter2:
     input:
         readF = input_dir + "{sample}_R1_001.fastq.gz",
@@ -143,7 +144,7 @@ rule kraken2:
         """
 
 
-# Filter kraken2 results
+# Filter kraken2 results to only keep bacteria
 rule filter_kraken2:
     input:
         rep = output_dir + "kraken2/{sample}_kraken.tsv",
@@ -272,6 +273,7 @@ rule resfinderfg:
         """
 
 
+# Filters Resfinder results based on 90% identity, 60% coverage, calculates Transcripts per Million, and sorts based on that
 rule filter_and_normalize_resfinder:
     input:
         res_sorted = output_dir + "resfinder/{sample}/resfinder_kma/{sample}_all.res",
@@ -294,6 +296,7 @@ rule filter_and_normalize_resfinder:
         new_res.to_csv(output.res, sep="\t", index=False)
 
 
+# Filters ResfinderFG results based on 90% identity, 60% coverage, calculates Transcripts per Million, and sorts based on that
 rule filter_and_normalize_resfinder_fg:
     input:
         res_sorted = output_dir + "resfinderfg/{sample}_sorted.res",
