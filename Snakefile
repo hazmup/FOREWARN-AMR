@@ -1,6 +1,8 @@
 # Directories------------------------------------------------------------------
 configfile: "config.yaml"
 
+import os
+import pandas as pd
 import glob
 
 # Define input and output directories
@@ -17,114 +19,107 @@ READS = ["1", "2"]
 # All rule - Modify accordigly-------------------------------------------------
 rule all:
     input:
-        expand(output_dir + "/fastqc/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
-        expand(output_dir + "/bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv", sample=SAMPLES),
-        expand(output_dir + "/rgi/{sample}.txt", sample=SAMPLES),
-        expand(output_dir + "/resfinder/{sample}/resfinder_kma/all.res", sample=SAMPLES),
+        output_dir + "multiqc/raw/multiqc_report.html",
+        expand(output_dir + "bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv", sample=SAMPLES),
+        expand(output_dir + "rgi/{sample}.txt", sample=SAMPLES),
+        expand(output_dir + "resfinderfg/{sample}_sorted.res", sample=SAMPLES),
+        expand(output_dir + "resfinder/{sample}/resfinder_kma/{sample}_all.res", sample=SAMPLES),
+        expand(output_dir + "resfinderfg/{sample}_filtered_normalized.res", sample=SAMPLES),
+        expand(output_dir + "resfinder/{sample}_filtered_normalized.res", sample=SAMPLES),
 
 
 # Rule definitions-------------------------------------------------------------
+
 # Run FastQC on the fastq.gz files
-rule fastqc_fastq_gz:
+rule fastqc_raw:
     input:
         input_dir + "{sample}_{read}_001.fastq.gz",
     output:
-        html = output_dir + "fastqc/{sample}_{read}_fastqc.html",
-        zip = output_dir + "fastqc/{sample}_{read}_fastqc.zip",
+        html = output_dir + "fastqc/raw/{sample}_{read}_fastqc.html",
+        zip = output_dir + "fastqc/raw/{sample}_{read}_fastqc.zip",
     params: 
-        "--quiet",
+        extra = "--quiet",
     log:
-        output_dir+"/logs/fastqc/{sample}_{read}.log",
-    params:
-        threads=config["fastqc_params"],
+        output_dir + "logs/fastqc_raw/{sample}_{read}.log",
+    threads: 1,
+    resources:
+        mem_mb = 1024,   
     wrapper:
-        "v1.25.0/bio/fastqc"
+        "v1.31.0/bio/fastqc"
 
 
-# Run FastQC on the fastq files
-rule fastqc_fastq:
+# Run FastQC on the clean fastq.gz files
+rule fastqc_clean:
     input:
-        input_dir + "{sample}_{read}_001.fastq",
+        output_dir + "rqcfilter2/{sample}/{sample}_R1_001.anqdpht.fastq.gz",
     output:
-        html = output_dir + "fastqc/{sample}_{read}_fastqc.html",
-        zip = output_dir + "fastqc/{sample}_{read}_fastqc.zip",
+        html = output_dir + "fastqc/clean/{sample}_clean_fastqc.html",
+        zip = output_dir + "fastqc/clean/{sample}_clean_fastqc.zip",
     params: 
-        "--quiet",
+        extra = "--quiet",
     log:
-        output_dir+"/logs/fastqc/{sample}_{read}.log",
-    params:
-        threads=config["fastqc_params"],
+        output_dir + "logs/fastqc_clean/{sample}.log",
+    threads: 1,
+    resources:
+        mem_mb = 1024,   
     wrapper:
-        "v1.25.0/bio/fastqc"
+        "v1.31.0/bio/fastqc"
 
 
-# Run MultiQC on the FastQC reports
-rule multiqc:
+# Run MultiQC on the FastQC raw data reports
+rule multiqc_raw:
     input:
-        expand(output_dir + "fastqc/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
+        expand(output_dir + "fastqc/raw/{sample}_R{read}_fastqc.zip", sample=SAMPLES, read=READS),
     output:
-        output_dir + "multiqc/multiqc_report.html",
+        output_dir + "multiqc/raw/multiqc_report.html",
     params:
         extra = "",
         use_input_files_only = True, # Optional, use only a.txt and don't search folder samtools_stats for files
     log:
         output_dir + "logs/multiqc.log",
     wrapper:
-        "v1.25.0/bio/multiqc"
+        "v1.31.0/bio/multiqc"
 
 
-# Run bbduk to remove adapters
-rule remove_adapters:
+# Run MultiQC on the FastQC clean data reports
+rule multiqc_clean:
     input:
-        sample = [input_dir + "{sample}_R1_001.fastq.gz", input_dir + "{sample}_R2_001.fastq.gz"],
-        adapters = config["bbduk"]["ref"]["remove_adapters"],
+        expand(output_dir + "fastqc/clean/{sample}_clean_fastqc.zip", sample=SAMPLES),
     output:
-        trimmed = temp([output_dir+"/trimmed/{sample}_R1_adaptered.fastq.gz", output_dir + "trimmed/{sample}_R2_adaptered.fastq.gz"])
-    log:
-        output_dir + "logs/bbduk/pe/{sample}_remove_adapters.log",
+        output_dir + "multiqc/clean/multiqc_report.html",
     params:
-        extra = lambda w, input: "ref={adapters} ktrim={ktrim} k={k} mink={mink} hdist={hdist} tpe tbo trimpolygright={trimpolygright} ftr={ftr}".format(
-            adapters = input.adapters,
-            ktrim = config["bbduk"]["ktrim"],
-            k = config["bbduk"]["k"]["remove_adapters"],
-            mink = config["bbduk"]["mink"],
-            hdist = config["bbduk"]["hdist"],
-            ftr = config["bbduk"]["ftr"],
-            trimpolygright = config["bbduk"]["trimpolygright"],
-        ),
-        java_opts = "",
-    resources:
-        mem_mb = config["bbduk"]["memory"],
-    threads:
-        config["bbduk"]["threads"],
+        extra = "",
+        use_input_files_only = True, # Optional, use only a.txt and don't search folder samtools_stats for files
+    log:
+        output_dir + "logs/multiqc.log",
     wrapper:
-        "v1.25.0/bio/bbtools/bbduk"
+        "v1.31.0/bio/multiqc"
 
 
-# Run bbduk to remove sequencing artifacts
-rule remove_artifacts:
+rule rqcfilter2:
     input:
-        sample = [output_dir + "trimmed/{sample}_R1_adaptered.fastq.gz", output_dir + "trimmed/{sample}_R2_adaptered.fastq.gz"],
-        adapters = config["bbduk"]["ref"]["remove_artifacts"],
+        readF = input_dir + "{sample}_R1_001.fastq.gz",
+        readR = input_dir + "{sample}_R2_001.fastq.gz",
+        ref_data = db_dir + config["rqcfilter2"]["database"],
     output:
-        trimmed = [output_dir + "trimmed/{sample}_R1_clean.fastq.gz", output_dir + "trimmed/{sample}_R2_clean.fastq.gz"],
-        stats = output_dir + "trimmed/{sample}.stats.txt",
+        output_dir + "rqcfilter2/{sample}/{sample}_R1_001.anqdpht.fastq.gz",
     log:
-        output_dir + "logs/bbduk/pe/{sample}_remove_artifacts.log",
+        output_dir + "logs/rqcfilter2/{sample}.log",
     params:
-        extra = lambda w, input: "ref={ref} k={k} hdist={hdist} ".format(
-            ref = input.adapters,
-            ktrim = config["bbduk"]["ktrim"],
-            k = config["bbduk"]["k"]["remove_artifacts"],
-            hdist = config["bbduk"]["hdist"],
-        ),
-        java_opts = "",
+        out_dir = output_dir + "rqcfilter2/{sample}/",
     resources:
-        mem_mb = config["bbduk"]["memory"],
+        mem_gb = config["rqcfilter2"]["memory"],
     threads:
-        config["bbduk"]["threads"],
-    wrapper:
-        "v1.25.0/bio/bbtools/bbduk"
+        config["rqcfilter2"]["threads"],
+    conda:
+        "envs/bbmap.yaml",
+    shell:
+        """
+        rqcfilter2.sh -Xmx{resources.mem_gb}g chastityfilter=f jni=t in={input.readF} in2={input.readR} rqcfilterdata={input.ref_data} \
+        path={params.out_dir} rna=f trimfragadapter=t qtrim=r trimq=0 maxns=3 maq=3 minlen=51 \
+        mlf=0.33 phix=t removehuman=t removedog=t removecat=t removemouse=t khist=t \
+        detectmicrobes=t sketch kapa=t clumpify=t tmpdir= barcodefilter=f trimpolyg=5 usejni=f \
+        """
 
 
 # Run kraken2 to classify reads
@@ -145,16 +140,28 @@ rule kraken2:
     shell:
         """
         kraken2 --db {input.db} --threads {params.threads} --paired {input.readF} {input.readR}  --report {output.rep} > {output.classif}
-
         """
 
 
-# Run bracken on kraken2 reports to get clasification to specific taxonomic level
-rule bracken:
+# Filter kraken2 results
+rule filter_kraken2:
     input:
         rep = output_dir + "kraken2/{sample}_kraken.tsv",
-        db = config["bracken"]["database"],
     output:
+        bacteria_rep = output_dir + "kraken2/{sample}_kraken_bacteria.tsv",
+    shell:
+        """
+        awk '$6=="D"{{if(++found==2)exit}} {{print $0}}' {input.rep} > {output.bacteria_rep}
+        """
+
+
+# Run bracken on the filtered kraken2 reports to get clasification to specific taxonomic level
+rule bracken:
+    input:
+        rep = output_dir + "kraken2/{sample}_kraken_bacteria.tsv",
+        db = db_dir + config["bracken"]["database"],
+    output:
+        brack_rep_temp = temp(output_dir + "bracken/{sample}_bracken_" + config["bracken"]["level"] + ".unsorted.tsv"),
         brack_rep = output_dir + "bracken/{sample}_bracken_" + config["bracken"]["level"] + ".tsv",
     log:
         output_dir + "logs/bracken/{sample}.log",
@@ -166,8 +173,9 @@ rule bracken:
         "envs/bracken.yaml",
     shell:
         """
-        bracken -d {input.db} -i {input.rep} -o {output.brack_rep} -r {params.read_len} -l {params.level} -t {params.threshold}
+        bracken -d {input.db} -i {input.rep} -o {output.brack_rep_temp} -r {params.read_len} -l {params.level} -t {params.threshold}
 
+        (head -n 1 {output.brack_rep_temp} && tail -n +2 {output.brack_rep_temp}  | sort -nr -k6 -t$'\t') > {output.brack_rep}
         """
 
 
@@ -194,7 +202,6 @@ rule rgi:
 --wildcard_version 4.0.0 --amr_kmers {input.cardDb}/wildcard/all_amr_61mers.txt --kmer_database {input.cardDb}/wildcard/61_kmer_db.json --kmer_size 61
 
         rgi bwt --read_one {input.readF} --read_two {input.readR} --aligner {params.aligner} --threads {params.threads} --output_file {output.cardTxt} --include_wildcard --include_other_models --local
-
         """
 
 
@@ -204,12 +211,13 @@ rule resfinder:
         readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
         readR = output_dir + "trimmed/{sample}_R2_clean.fastq.gz",
     output:
-        res = output_dir + "resfinder/{sample}/resfinder_kma/all.res",
+        res_temp = temp(output_dir + "resfinder/{sample}/resfinder_kma/{sample}_all.unsorted.res"),
+        res = output_dir + "resfinder/{sample}/resfinder_kma/{sample}_all.res",
     log:
-        output_dir + "logs/rgi/{sample}.log",
+        output_dir + "logs/resfinder/{sample}.log",
     params:
         out_dir = output_dir + "resfinder/{sample}/",
-        db_res = config["resfinder"]["db_res"],
+        db_res = db_dir + config["resfinder"]["db_res"],
     conda:
         "envs/resfinder.yaml",
     shell:
@@ -223,7 +231,86 @@ rule resfinder:
         # Runs resfinder
         run_resfinder.py -ifq {input.readF} {input.readR} -o {params.out_dir} --acquired -db_res {params.db_res}
 
-        # Create a summary results file
-        array=( {params.out_dir}/resfinder_kma/*.res )
-        {{ cat ${{array[@]:0:1}}; grep -vh "^#" ${{array[@]:1}}; }} > {output.res}
+        # Create a summary results file and sorts it
+        array=( {params.out_dir}resfinder_kma/*.res )
+        {{ cat ${{array[@]:0:1}}; grep -vh "^#" ${{array[@]:1}}; }} > {output.res_temp}
+        (head -n 1 {output.res_temp} && tail -n +2 {output.res_temp}  | sort -nr -k2 -t$'\t') > {output.res}
         """
+
+
+# Run resfinderfg to get resistome
+rule resfinderfg:
+    input:
+        readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
+        readR = output_dir + "trimmed/{sample}_R2_clean.fastq.gz",
+    output:
+        res_sorted = output_dir + "resfinderfg/{sample}_sorted.res",
+        res = output_dir + "resfinderfg/{sample}.res",
+    log:
+        output_dir + "logs/resfinderfg/{sample}.log",
+    params:
+        out_prefix = output_dir + "resfinderfg/{sample}/",
+        db_res = db_dir + config["resfinderfg"]["db_res"],
+        threads = config["resfinderfg"]["threads"],
+    threads:
+        config["resfinderfg"]["threads"],
+    conda:
+        "envs/kma.yaml",
+    shell:
+        """
+        # Checks if databases have been built and builds them otherwise
+        if [ ! -e {params.db_res}/all.comp.b ]
+        then
+            {params.db_res}/INSTALL.py
+        fi
+
+        # Runs kma with resfinderfg db
+        kma -ipe {input.readF} {input.readR} -o {params.out_prefix} -t_db {params.db_res}/all -t {params.threads}
+
+        # Sorts the summary results file
+        (head -n 1 {output.res} && tail -n +2 {output.res}  | sort -nr -k2 -t$'\t') > {output.res_sorted}
+        """
+
+
+rule filter_and_normalize_resfinder:
+    input:
+        res_sorted = output_dir + "resfinder/{sample}/resfinder_kma/{sample}_all.res",
+        ref = output_dir + "multiqc/clean/multiqc_report_data/multiqc_fastqc.txt",
+    output:
+        res = output_dir + "resfinder/{sample}_filtered_normalized.res"
+    run:
+        # Reads files
+        ref = pd.read_csv(input.ref, sep="\t")
+        res = pd.read_csv(input.res_sorted, sep="\t")
+        
+        # Filter results using Strict criteria of 60% coverage and 90% identity
+        res = res.query('Template_Coverage >= 60 & Query_Identity >= 90')
+
+        # Calculates TPM by first normalizing for gene length, and then by total sequencing depth (not just ARG reads)
+        new_res = res
+        new_res['TPM'] = new_res['Depth'] / (new_res['Template_length']/1000) * ((ref.query('Sample == "'+wildcards.sample+'_R1_001.anqdpht"').iat[0, 4])/1000000)
+
+        # Saves new results
+        new_res.to_csv(output.res, sep="\t", index=False)
+
+
+rule filter_and_normalize_resfinder_fg:
+    input:
+        res_sorted = output_dir + "resfinderfg/{sample}_sorted.res",
+        ref = output_dir + "multiqc/clean/multiqc_report_data/multiqc_fastqc.txt",
+    output:
+        res = output_dir + "resfinderfg/{sample}_filtered_normalized.res"
+    run:
+        # Reads files
+        ref = pd.read_csv(input.ref, sep="\t")
+        res = pd.read_csv(input.res_sorted, sep="\t")
+        
+        # Filter results using Strict criteria of 60% coverage and 90% identity
+        res = res.query('Template_Coverage >= 60 & Query_Identity >= 90')
+
+        # Calculates TPM by first normalizing for gene length, and then by total sequencing depth (not just ARG reads)
+        new_res = res
+        new_res['TPM'] = new_res['Depth'] / (new_res['Template_length']/1000) * ((ref.query('Sample == "'+wildcards.sample+'_R1_001.anqdpht"').iat[0, 4])/1000000)
+
+        # Saves new results
+        new_res.to_csv(output.res, sep="\t", index=False)
