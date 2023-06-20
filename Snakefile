@@ -123,7 +123,7 @@ rule rqcfilter2:
         """
 
 
-# Run kraken2 to classify reads
+# Run Kraken2 to classify reads
 rule kraken2:
     input:
         readF = output_dir + "trimmed/{sample}_R1_clean.fastq.gz",
@@ -144,7 +144,7 @@ rule kraken2:
         """
 
 
-# Filter kraken2 results to only keep bacteria
+# Filter Kraken2 results to only keep bacteria
 rule filter_kraken2:
     input:
         rep = output_dir + "kraken2/{sample}_kraken.tsv",
@@ -156,7 +156,7 @@ rule filter_kraken2:
         """
 
 
-# Run bracken on the filtered kraken2 reports to get clasification to specific taxonomic level
+# Run Bracken on the filtered Kraken2 reports to get clasification to specific taxonomic level
 rule bracken:
     input:
         rep = output_dir + "kraken2/{sample}_kraken_bacteria.tsv",
